@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>File Upload with Drag and Drop</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+        }
+
+        #upload-form {
+            padding: 20px;
+            border: 2px dashed #ccc;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        #file-input {
+            display: none;
+        }
+
+        #file-list {
+            margin-top: 20px;
+        }
+
+        ul {
+            list-style-type: none;
+            padding: 0px;
+        }
+    </style>
+</head>
+
+<body>
+
+    <button onclick="logout()">Logout</button>
+
+    <h3>File Upload with Drag and Drop</h3>
+    <div id="upload-form" ondragover="handleDragOver(event)" ondrop="handleDrop(event)" onclick="clickDrag()">
+        <strong>Drag & Drop files here</strong><br>
+        or<br>
+        <span id="file-label">Click to select files</span>
+        <input type="file" id="file-input" onchange="fileChange(event)">
+    </div>
+
+    <div id="file-list">
+        <h3>Uploaded Files</h3>
+        <ul id="files"></ul>
+    </div>
+
+    <script>
+        function clickDrag() {
+            document.getElementById('file-input').click();
+        }
+        function fileChange(event) {
+            event.preventDefault();
+
+            const fileInput = document.getElementById('file-input');
+            if (fileInput.files.length > 0) {
+                const files = fileInput.files[0];
+                uploadFiles(files);
+            }
+        }
+        function handleDragOver(event) {
+            event.preventDefault();
+            document.getElementById('upload-form').style.border = '2px dashed #333';
+        }
+
+        function handleDrop(event) {
+            event.preventDefault();
+            document.getElementById('upload-form').style.border = '2px dashed #ccc';
+
+            const files = event.dataTransfer.files;
+            for (const file of files) {
+                uploadFiles(file);
+            }
+        }
+
+        async function uploadFiles(file) {
+            const formData = new FormData();
+            formData.append('file', file);
+
+            try {
+                const response = await fetch('/upload', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const data = await response.text();
+                console.log(data);
+                fetchFileList();
+            } catch (error) {
+                console.error('Error uploading file:', error);
+            }
+        }
+
+        // Fungsi untuk menampilkan daftar file yang sudah diunggah
+        async function fetchFileList() {
+            try {
+                const response = await fetch('/listfiles');
+                const data = await response.json();
+
+                const fileListElement = document.getElementById('files');
+                fileListElement.innerHTML = '';
+
+                if (data.files && data.files.length > 0) {
+                    data.files.forEach((filename) => {
+                        appendFileItem(filename)
+                        // const listItem = document.createElement('li');
+                        // listItem.innerHTML = `<a href="${filename}">${filename}</>`;
+                        // fileListElement.appendChild(listItem);
+                    });
+                } else {
+                    const listItem = document.createElement('li');
+                    listItem.textContent = 'No files uploaded yet.';
+                    fileListElement.appendChild(listItem);
+                }
+            } catch (error) {
+                console.error('Error fetching file list:', error);
+            }
+        }
+
+        function appendFileItem(filename) {
+            const fileListElement = document.getElementById('files');
+            const listItem = document.createElement('li');
+
+            // Tambahkan nama file
+            listItem.innerHTML = `<a href="${filename}">${filename}</a>`;
+
+            // Tambahkan tombol delete
+            const deleteButton = document.createElement('button');
+            deleteButton.textContent = 'Delete';
+            deleteButton.style.marginLeft = '20px'
+            deleteButton.onclick = function () {
+                deleteFile(filename);
+            };
+
+            // Tambahkan tombol download
+            // const downloadButton = document.createElement('button');
+            // downloadButton.textContent = 'View';
+            // downloadButton.onclick = function () {
+            //     openFile(filename);
+            // };
+
+            // Tambahkan tombol delete dan download ke dalam listItem
+            listItem.appendChild(deleteButton);
+            // listItem.appendChild(downloadButton);
+
+            // Tambahkan listItem ke daftar file
+            fileListElement.appendChild(listItem);
+        }
+
+
+        // Jalankan fungsi fetchFileList setelah halaman dimuat
+        window.onload = fetchFileList;
+
+        async function deleteFile(filename) {
+            try {
+                const response = await fetch(`/deletefile/${filename}`, { method: 'DELETE' });
+                const data = await response.json();
+
+                console.log(data.message);
+                fetchFileList(); // Ambil ulang daftar file setelah menghapus
+            } catch (error) {
+                console.error('Error deleting file:', error);
+            }
+        }
+
+        function openFile(filename) {
+            window.open(`/${filename}`);
+        }
+
+        async function logout() {
+            try {
+                const response = await fetch('/logout', {
+                    method: 'POST',
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    window.location.reload()
+                } else {
+                    alert('Logout failed.');
+                }
+            } catch (error) {
+                console.error('Error during logout:', error);
+            }
+        }
+
+    </script>
+
+</body>
+
+</html>
