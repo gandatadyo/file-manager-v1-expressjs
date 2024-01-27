@@ -46,7 +46,7 @@
 </head>
 <body>
 
-    <form id="login-form" onsubmit="login()">
+    <form id="login-form" onsubmit="login(this)">
         <h2>Login</h2>
 
         <label for="username">Username:</label>
@@ -59,7 +59,9 @@
     </form>
 
     <script>
-        async function login() {
+        async function login(e) {
+            e.preventDefault();
+            e.stopPropagation();
             const username = document.getElementById('username').value;
             const password = document.getElementById('password').value;
 
