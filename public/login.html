@@ -46,7 +46,7 @@
 </head>
 <body>
 
-    <form id="login-form" onsubmit="login(this)">
+    <form id="login-form" onsubmit="login(event)">
         <h2>Login</h2>
 
         <label for="username">Username:</label>
@@ -86,6 +86,8 @@
                 console.error('Error during login:', error);
             }
         }
+
+      
     </script>
 
 </body>

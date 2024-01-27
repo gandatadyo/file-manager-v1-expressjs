@@ -29,6 +29,22 @@
             list-style-type: none;
             padding: 0px;
         }
+
+        #progress-bar-container {
+            width: 100%;
+            height: 20px;
+            background-color: #ddd;
+            border-radius: 4px;
+            overflow: hidden;
+            margin-top: 10px;
+        }
+
+        #progress-bar {
+            height: 100%;
+            background-color: #4caf50;
+            border-radius: 4px;
+            width: 0;
+        }
     </style>
 </head>
 
@@ -37,6 +53,11 @@
     <button onclick="logout()">Logout</button>
 
     <h3>File Upload with Drag and Drop</h3>
+
+    <div id="progress-bar-container">
+        <div id="progress-bar"></div>
+    </div>
+
     <div id="upload-form" ondragover="handleDragOver(event)" ondrop="handleDrop(event)" onclick="clickDrag()">
         <strong>Drag & Drop files here</strong><br>
         or<br>
@@ -59,6 +80,7 @@
             const fileInput = document.getElementById('file-input');
             if (fileInput.files.length > 0) {
                 const files = fileInput.files[0];
+                resetProgressBar();
                 uploadFiles(files);
             }
         }
@@ -71,28 +93,54 @@
             event.preventDefault();
             document.getElementById('upload-form').style.border = '2px dashed #ccc';
 
+            resetProgressBar();
             const files = event.dataTransfer.files;
             for (const file of files) {
+                resetProgressBar();
                 uploadFiles(file);
             }
         }
 
         async function uploadFiles(file) {
+            document.getElementById('progress-bar-container').style.display = 'block';
             const formData = new FormData();
             formData.append('file', file);
 
-            try {
-                const response = await fetch('/upload', {
-                    method: 'POST',
-                    body: formData
-                });
+            // try {
+            //     const response = await fetch('/upload', {
+            //         method: 'POST',
+            //         body: formData
+            //     });
 
-                const data = await response.text();
-                console.log(data);
-                fetchFileList();
-            } catch (error) {
-                console.error('Error uploading file:', error);
-            }
+            //     const data = await response.text();
+            //     console.log(data);
+            //     fetchFileList();
+            // } catch (error) {
+            //     console.error('Error uploading file:', error);
+            // }
+
+            const xhr = new XMLHttpRequest();
+
+            xhr.open('POST', '/upload', true);
+
+            // Track upload progress
+            xhr.upload.addEventListener('progress', (event) => {
+                if (event.lengthComputable) {
+                    const progressBar = document.getElementById('progress-bar');
+                    const percentComplete = (event.loaded / event.total) * 100;
+                    progressBar.style.width = percentComplete + '%';
+                }
+            });
+
+            xhr.onreadystatechange = function () {
+                if (xhr.readyState === 4 && xhr.status === 200) {
+                    // const response = JSON.parse(xhr.responseText);
+                    resetProgressBar()
+                    fetchFileList()
+                }
+            };
+
+            xhr.send(formData);
         }
 
         // Fungsi untuk menampilkan daftar file yang sudah diunggah
@@ -189,6 +237,13 @@
             }
         }
 
+        function resetProgressBar() {
+            document.getElementById('progress-bar-container').style.display = 'none';
+            const progressBar = document.getElementById('progress-bar');
+            progressBar.style.width = '0';
+        }
+
+        resetProgressBar()
     </script>
 
 </body>
